@@ -4,50 +4,34 @@
 
 @layer base {
   :root {
-    --background: 220 13% 9%;
-    --foreground: 40 20% 90%;
-
-    --card: 220 13% 12%;
-    --card-foreground: 40 20% 90%;
-
-    --popover: 220 13% 12%;
-    --popover-foreground: 40 20% 90%;
-
-    --primary: 38 92% 55%;
-    --primary-foreground: 220 13% 9%;
-
-    --secondary: 220 13% 16%;
-    --secondary-foreground: 40 20% 75%;
-
-    --muted: 220 13% 16%;
-    --muted-foreground: 220 10% 50%;
-
-    --accent: 38 92% 55%;
-    --accent-foreground: 220 13% 9%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 220 13% 18%;
-    --input: 220 13% 16%;
-    --ring: 38 92% 55%;
-
-    --radius: 0.75rem;
-
-    --sidebar-background: 220 13% 7%;
-    --sidebar-foreground: 40 20% 80%;
-    --sidebar-primary: 38 92% 55%;
-    --sidebar-primary-foreground: 220 13% 9%;
-    --sidebar-accent: 220 13% 14%;
-    --sidebar-accent-foreground: 40 20% 80%;
-    --sidebar-border: 220 13% 14%;
-    --sidebar-ring: 38 92% 55%;
-
-    --amber: 38 92% 55%;
-    --amber-dim: 38 60% 40%;
-    --surface: 220 13% 12%;
-    --surface-2: 220 13% 16%;
-    --surface-3: 220 13% 20%;
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222 84% 5%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5% 26%;
+    --sidebar-primary: 240 6% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
@@ -55,139 +39,11 @@
   * {
     @apply border-border;
   }
-
-  html {
-    @apply dark;
-  }
-
   body {
     @apply bg-background text-foreground;
-    font-family: "Golos Text", sans-serif;
-    -webkit-font-smoothing: antialiased;
+    font-family:
+      system-ui,
+      -apple-system,
+      sans-serif;
   }
-
-  ::-webkit-scrollbar {
-    width: 4px;
-    height: 4px;
-  }
-
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border-radius: 2px;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
-  }
-}
-
-@layer utilities {
-  .font-caveat {
-    font-family: "Caveat", cursive;
-  }
-
-  .bg-surface {
-    background: hsl(var(--surface));
-  }
-
-  .bg-surface-2 {
-    background: hsl(var(--surface-2));
-  }
-
-  .bg-surface-3 {
-    background: hsl(var(--surface-3));
-  }
-
-  .text-amber {
-    color: hsl(var(--amber));
-  }
-
-  .bg-amber {
-    background: hsl(var(--amber));
-  }
-
-  .border-amber {
-    border-color: hsl(var(--amber));
-  }
-
-  .ring-amber {
-    --tw-ring-color: hsl(var(--amber));
-  }
-
-  .note-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .folder-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-
-  .drawer-overlay {
-    backdrop-filter: blur(4px);
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-out-right {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-.animate-slide-out-right {
-  animation: slide-out-right 0.25s ease-in forwards;
-}
-.animate-fade-in {
-  animation: fade-in 0.25s ease-out;
-}
-.animate-scale-in {
-  animation: scale-in 0.2s ease-out;
 }

@@ -87,16 +87,9 @@ export default {
 					}
 				}
 			},
-			fontFamily: {
-				'golos': ['Golos Text', 'sans-serif'],
-				'caveat': ['Caveat', 'cursive'],
-			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'slide-in-right': 'slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-				'fade-in': 'fade-in 0.25s ease-out',
-				'scale-in': 'scale-in 0.2s ease-out',
 			}
 		}
 	},

@@ -2,14 +2,33 @@ import { useState } from 'react';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, Folder } from '@/types/notes';
 
-function fmtDate(iso: string): string {
+/* ── helpers ──────────────────────────────────────────── */
+function fmt(iso: string): string {
   return new Date(iso).toLocaleString('ru-RU', {
     day: 'numeric', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
 }
 
-// ─── Экран редактора заметки ───────────────────────────────────────────────
+/* ── NoteCard ─────────────────────────────────────────── */
+function NoteCard({ note, onClick }: { note: Note; onClick: () => void }) {
+  return (
+    <div onClick={onClick} className="border rounded-lg p-3 cursor-pointer hover:bg-gray-50 transition-colors bg-white">
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <span className="font-medium text-sm text-gray-900 leading-tight">
+          {note.isPinned && <span className="mr-1">📌</span>}
+          {note.title || <span className="italic text-gray-400">Без названия</span>}
+        </span>
+      </div>
+      {note.content && (
+        <p className="text-xs text-gray-500 truncate mb-1">{note.content}</p>
+      )}
+      <p className="text-xs text-gray-400">{fmt(note.createdAt)}</p>
+    </div>
+  );
+}
+
+/* ── NoteEditor ───────────────────────────────────────── */
 interface EditorProps {
   note: Note;
   folders: Folder[];
@@ -19,80 +38,56 @@ interface EditorProps {
 }
 
 function NoteEditor({ note, folders, onUpdate, onDelete, onBack }: EditorProps) {
+  const folder = folders.find(f => f.id === note.folderId);
+
   return (
-    <div style={{ padding: 16 }}>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, alignItems: 'center' }}>
-        <button onClick={onBack}>← Назад</button>
+    <div className="flex flex-col h-screen bg-white">
+      {/* toolbar */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b bg-gray-50 shrink-0">
+        <button onClick={onBack} className="text-sm text-blue-600 hover:underline">← Назад</button>
+        <span className="flex-1 text-xs text-gray-400">
+          {folder ? `📁 ${folder.name}` : 'Без папки'}
+        </span>
         <button
           onClick={() => onUpdate(note.id, { isPinned: !note.isPinned })}
-          style={{ fontWeight: note.isPinned ? 'bold' : 'normal' }}
+          className={`text-sm px-2 py-1 rounded border transition-colors ${note.isPinned ? 'bg-yellow-50 border-yellow-300 text-yellow-700' : 'border-gray-200 text-gray-500 hover:bg-gray-100'}`}
         >
           {note.isPinned ? '📌 Закреплено' : '📌 Закрепить'}
         </button>
-        <button onClick={() => { onDelete(note.id); onBack(); }} style={{ color: 'red' }}>
+        <button
+          onClick={() => { onDelete(note.id); onBack(); }}
+          className="text-sm px-2 py-1 rounded border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+        >
           🗑 Удалить
         </button>
       </div>
 
-      <div style={{ marginBottom: 6, fontSize: 12, color: '#666' }}>
-        Создано: {fmtDate(note.createdAt)}
-        {note.updatedAt !== note.createdAt && <> · Изменено: {fmtDate(note.updatedAt)}</>}
+      {/* meta */}
+      <div className="px-4 py-2 border-b bg-gray-50 shrink-0 text-xs text-gray-400 flex gap-4">
+        <span>Создано: {fmt(note.createdAt)}</span>
+        {note.updatedAt !== note.createdAt && <span>Изменено: {fmt(note.updatedAt)}</span>}
       </div>
 
-      {note.folderId && (
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-          Папка: {folders.find(f => f.id === note.folderId)?.name ?? '—'}
-        </div>
-      )}
-
-      <input
-        value={note.title}
-        onChange={e => onUpdate(note.id, { title: e.target.value })}
-        placeholder="Заголовок"
-        style={{ width: '100%', fontSize: 18, fontWeight: 600, border: 'none', borderBottom: '1px solid #ccc', marginBottom: 12, padding: '4px 0', outline: 'none', boxSizing: 'border-box' }}
-      />
-      <textarea
-        value={note.content}
-        onChange={e => onUpdate(note.id, { content: e.target.value })}
-        placeholder="Начните писать..."
-        rows={16}
-        style={{ width: '100%', fontSize: 15, border: '1px solid #ddd', borderRadius: 4, padding: 8, resize: 'vertical', outline: 'none', boxSizing: 'border-box' }}
-      />
+      {/* content */}
+      <div className="flex flex-col flex-1 overflow-hidden px-4 pt-3 pb-4">
+        <input
+          value={note.title}
+          onChange={e => onUpdate(note.id, { title: e.target.value })}
+          placeholder="Заголовок"
+          className="text-xl font-semibold text-gray-900 outline-none border-b border-transparent focus:border-gray-200 pb-2 mb-3 w-full"
+        />
+        <textarea
+          value={note.content}
+          onChange={e => onUpdate(note.id, { content: e.target.value })}
+          placeholder="Начните писать..."
+          className="flex-1 resize-none outline-none text-sm text-gray-700 leading-relaxed w-full"
+        />
+      </div>
     </div>
   );
 }
 
-// ─── Карточка заметки ──────────────────────────────────────────────────────
-interface NoteCardProps {
-  note: Note;
-  onClick: () => void;
-}
-
-function NoteCard({ note, onClick }: NoteCardProps) {
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        border: '1px solid #ddd', borderRadius: 6, padding: '10px 12px',
-        cursor: 'pointer', background: '#fafafa', marginBottom: 8,
-        borderLeft: note.isPinned ? '3px solid #333' : '1px solid #ddd',
-      }}
-    >
-      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-        {note.isPinned && <span style={{ marginRight: 4 }}>📌</span>}
-        {note.title || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Без названия</span>}
-      </div>
-      {note.content && (
-        <div style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {note.content.slice(0, 80)}
-        </div>
-      )}
-      <div style={{ fontSize: 11, color: '#aaa', marginTop: 4 }}>{fmtDate(note.createdAt)}</div>
-    </div>
-  );
-}
-
-// ─── Боковое меню ──────────────────────────────────────────────────────────
+/* ── SideDrawer ───────────────────────────────────────── */
 interface DrawerProps {
   open: boolean;
   onClose: () => void;
@@ -109,7 +104,8 @@ interface DrawerProps {
 
 function SideDrawer({
   open, onClose, folders, allCount, trashCount,
-  onShowAll, onShowTrash, onOpenFolder, onCreateFolder, onDeleteFolder, onRenameFolder,
+  onShowAll, onShowTrash, onOpenFolder,
+  onCreateFolder, onDeleteFolder, onRenameFolder,
 }: DrawerProps) {
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState('');
@@ -118,97 +114,132 @@ function SideDrawer({
 
   return (
     <>
-      <div
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', zIndex: 100 }}
-      />
-      <div style={{
-        position: 'fixed', right: 0, top: 0, bottom: 0, width: 280,
-        background: '#fff', zIndex: 101, padding: 16, overflowY: 'auto',
-        borderLeft: '1px solid #ddd',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <strong>Меню</strong>
-          <button onClick={onClose}>✕</button>
+      <div onClick={onClose} className="fixed inset-0 bg-black/30 z-40" />
+      <div className="fixed right-0 top-0 bottom-0 w-72 bg-white z-50 border-l shadow-lg flex flex-col">
+        {/* header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b">
+          <span className="font-semibold text-gray-800">Меню</span>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-lg leading-none">✕</button>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', marginBottom: 6 }}>Разделы</div>
-          <button
-            onClick={() => { onShowAll(); onClose(); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 0', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14 }}
-          >
-            📋 Все заметки ({allCount})
-          </button>
-          <button
-            onClick={() => { onShowTrash(); onClose(); }}
-            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 0', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14 }}
-          >
-            🗑 Корзина ({trashCount})
-          </button>
-        </div>
-
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase' }}>Папки</div>
-            <button onClick={onCreateFolder} style={{ fontSize: 12, border: '1px solid #ccc', borderRadius: 4, padding: '2px 8px', cursor: 'pointer' }}>
-              + Новая
+        <div className="flex-1 overflow-y-auto py-2">
+          {/* sections */}
+          <div className="px-3 mb-4">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide px-2 mb-1">Разделы</p>
+            <button
+              onClick={() => { onShowAll(); onClose(); }}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-between"
+            >
+              <span>📋 Все заметки</span>
+              <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{allCount}</span>
+            </button>
+            <button
+              onClick={() => { onShowTrash(); onClose(); }}
+              className="w-full text-left px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors flex items-center justify-between"
+            >
+              <span>🗑 Корзина</span>
+              <span className="text-xs text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{trashCount}</span>
             </button>
           </div>
 
-          {folders.map(f => (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-              {renamingId === f.id ? (
-                <>
-                  <input
-                    value={renameVal}
-                    onChange={e => setRenameVal(e.target.value)}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter') { onRenameFolder(f.id, renameVal); setRenamingId(null); }
-                      if (e.key === 'Escape') setRenamingId(null);
-                    }}
-                    autoFocus
-                    style={{ flex: 1, fontSize: 13, padding: '2px 4px', border: '1px solid #ccc', borderRadius: 3 }}
-                  />
-                  <button onClick={() => { onRenameFolder(f.id, renameVal); setRenamingId(null); }} style={{ fontSize: 11 }}>✓</button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => { onOpenFolder(f); onClose(); }}
-                    style={{ flex: 1, textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', fontSize: 14, padding: '6px 0' }}
-                  >
-                    📁 {f.name}
-                  </button>
-                  <button
-                    onClick={() => { setRenamingId(f.id); setRenameVal(f.name); }}
-                    style={{ fontSize: 11, color: '#888', border: 'none', background: 'none', cursor: 'pointer' }}
-                    title="Переименовать"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    onClick={() => onDeleteFolder(f.id)}
-                    style={{ fontSize: 11, color: '#c00', border: 'none', background: 'none', cursor: 'pointer' }}
-                    title="Удалить папку"
-                  >
-                    ✕
-                  </button>
-                </>
-              )}
+          {/* folders */}
+          <div className="px-3">
+            <div className="flex items-center justify-between px-2 mb-1">
+              <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Папки</p>
+              <button
+                onClick={onCreateFolder}
+                className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              >
+                + Создать
+              </button>
             </div>
-          ))}
 
-          {folders.length === 0 && (
-            <div style={{ color: '#aaa', fontSize: 13 }}>Нет папок</div>
-          )}
+            {folders.length === 0 && (
+              <p className="text-sm text-gray-400 px-2 py-2">Папок пока нет</p>
+            )}
+
+            {folders.map(f => (
+              <div key={f.id} className="flex items-center gap-1 group">
+                {renamingId === f.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={renameVal}
+                      onChange={e => setRenameVal(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') { onRenameFolder(f.id, renameVal); setRenamingId(null); }
+                        if (e.key === 'Escape') setRenamingId(null);
+                      }}
+                      className="flex-1 text-sm border rounded px-2 py-1 outline-none focus:border-blue-400"
+                    />
+                    <button
+                      onClick={() => { onRenameFolder(f.id, renameVal); setRenamingId(null); }}
+                      className="text-green-600 text-sm px-1"
+                    >✓</button>
+                    <button onClick={() => setRenamingId(null)} className="text-gray-400 text-sm px-1">✕</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { onOpenFolder(f); onClose(); }}
+                      className="flex-1 text-left px-3 py-2.5 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                    >
+                      📁 {f.name}
+                    </button>
+                    <button
+                      onClick={() => { setRenamingId(f.id); setRenameVal(f.name); }}
+                      className="opacity-0 group-hover:opacity-100 text-xs text-gray-400 hover:text-gray-600 px-1"
+                      title="Переименовать"
+                    >✎</button>
+                    <button
+                      onClick={() => onDeleteFolder(f.id)}
+                      className="opacity-0 group-hover:opacity-100 text-xs text-red-400 hover:text-red-600 px-1"
+                      title="Удалить"
+                    >✕</button>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </>
   );
 }
 
-// ─── Главный экран ──────────────────────────────────────────────────────────
+/* ── CreateFolderModal ────────────────────────────────── */
+function CreateFolderModal({ onConfirm, onCancel }: { onConfirm: (name: string) => void; onCancel: () => void }) {
+  const [name, setName] = useState('');
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
+        <h3 className="font-semibold text-gray-900 mb-4 text-lg">Новая папка</h3>
+        <input
+          autoFocus
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && name.trim()) onConfirm(name.trim()); if (e.key === 'Escape') onCancel(); }}
+          placeholder="Название папки"
+          className="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 mb-4"
+        />
+        <div className="flex gap-3">
+          <button onClick={onCancel} className="flex-1 py-2 border rounded-lg text-sm text-gray-600 hover:bg-gray-50">Отмена</button>
+          <button
+            onClick={() => name.trim() && onConfirm(name.trim())}
+            disabled={!name.trim()}
+            className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Создать
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Main App ─────────────────────────────────────────── */
+type Screen = 'home' | 'folder' | 'all' | 'trash';
+
 export default function NotesApp() {
   const {
     notes, folders,
@@ -216,47 +247,54 @@ export default function NotesApp() {
     createFolder, deleteFolder, renameFolder,
   } = useNotes();
 
-  const [screen, setScreen] = useState<'home' | 'folder' | 'all' | 'trash'>('home');
-  const [activeFolder, setActiveFolder] = useState<Folder | null>(null);
+  const [screen, setScreen] = useState<Screen>('home');
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(null);
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [newFolderModal, setNewFolderModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-
-  const activeNote = activeNoteId ? notes.find(n => n.id === activeNoteId) ?? null : null;
+  const [showNewFolder, setShowNewFolder] = useState(false);
 
   const liveNotes = notes.filter(n => !n.isDeleted);
   const trashNotes = notes.filter(n => n.isDeleted);
 
-  const folderNotes = (folderId: string) =>
-    liveNotes.filter(n => n.folderId === folderId);
+  const activeNote = activeNoteId ? notes.find(n => n.id === activeNoteId) ?? null : null;
+  const activeFolder = activeFolderId ? folders.find(f => f.id === activeFolderId) ?? null : null;
 
-  const searchedNotes = search.trim()
+  const folderNotes = (fid: string) =>
+    liveNotes
+      .filter(n => n.folderId === fid)
+      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+
+  const searchResults = search.trim()
     ? liveNotes.filter(n =>
         n.title.toLowerCase().includes(search.toLowerCase()) ||
         n.content.toLowerCase().includes(search.toLowerCase())
       )
-    : [];
+    : null;
 
-  const openNote = (note: Note) => setActiveNoteId(note.id);
-
-  const handleCreateNote = (folderId: string | null = null) => {
+  const handleNewNote = (folderId: string | null = null) => {
     const note = createNote(folderId);
     setActiveNoteId(note.id);
   };
 
-  const handleCreateFolder = () => {
-    if (newFolderName.trim()) {
-      createFolder(newFolderName.trim());
-      setNewFolderName('');
-      setNewFolderModal(false);
-    }
+  const handleOpenFolder = (f: Folder) => {
+    setActiveFolderId(f.id);
+    setScreen('folder');
   };
 
-  const handleBack = () => setActiveNoteId(null);
+  const handleDeleteFolder = (id: string) => {
+    deleteFolder(id);
+    if (activeFolderId === id) { setScreen('home'); setActiveFolderId(null); }
+  };
 
-  // Если открыта заметка — показываем редактор
+  const handleCreateFolder = (name: string) => {
+    createFolder(name);
+    setShowNewFolder(false);
+  };
+
+  const goHome = () => { setScreen('home'); setActiveFolderId(null); };
+
+  /* Если открыта заметка — показываем редактор */
   if (activeNote) {
     return (
       <NoteEditor
@@ -264,197 +302,225 @@ export default function NotesApp() {
         folders={folders}
         onUpdate={updateNote}
         onDelete={deleteNote}
-        onBack={handleBack}
+        onBack={() => setActiveNoteId(null)}
       />
     );
   }
 
+  /* Заголовок текущего экрана */
+  const screenTitle =
+    screen === 'folder' && activeFolder ? `📁 ${activeFolder.name}` :
+    screen === 'all' ? '📋 Все заметки' :
+    screen === 'trash' ? '🗑 Корзина' : '🏠 Заметки';
+
   return (
-    <div style={{ maxWidth: 700, margin: '0 auto', padding: 16, fontFamily: 'system-ui, sans-serif' }}>
-      {/* Шапка */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-        <h1 style={{ margin: 0, fontSize: 20, flex: 1 }}>
-          {screen === 'folder' && activeFolder ? `📁 ${activeFolder.name}` : screen === 'trash' ? '🗑 Корзина' : screen === 'all' ? '📋 Все заметки' : '🏠 Заметки'}
-        </h1>
-        {(screen === 'folder' || screen === 'all' || screen === 'trash') && (
-          <button onClick={() => { setScreen('home'); setActiveFolder(null); }}>← Назад</button>
-        )}
-        <button onClick={() => setDrawerOpen(true)}>☰</button>
-      </div>
+    <div className="min-h-screen bg-gray-50 font-sans">
+      <div className="max-w-2xl mx-auto">
 
-      {/* Поиск */}
-      <input
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        placeholder="Поиск по заметкам..."
-        style={{ width: '100%', padding: '8px 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, marginBottom: 12, boxSizing: 'border-box' }}
-      />
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 py-4 bg-white border-b sticky top-0 z-10">
+          {screen !== 'home' && (
+            <button onClick={goHome} className="text-blue-600 text-sm hover:underline shrink-0">← Назад</button>
+          )}
+          <h1 className="font-semibold text-gray-900 flex-1 truncate">{screenTitle}</h1>
+          <button
+            onClick={() => setDrawerOpen(true)}
+            className="text-gray-500 hover:text-gray-800 p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-lg leading-none"
+          >
+            ☰
+          </button>
+        </div>
 
-      {/* Результаты поиска */}
-      {search.trim() && (
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 12, color: '#666', marginBottom: 8 }}>
-            Результаты поиска ({searchedNotes.length}):
-          </div>
-          {searchedNotes.length === 0 ? (
-            <div style={{ color: '#aaa', fontSize: 13 }}>Ничего не найдено</div>
-          ) : (
-            searchedNotes.map(n => <NoteCard key={n.id} note={n} onClick={() => openNote(n)} />)
+        <div className="px-4 py-4 space-y-4">
+          {/* Search */}
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Поиск по заметкам..."
+            className="w-full bg-white border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 transition-colors"
+          />
+
+          {/* Search results */}
+          {searchResults && (
+            <div>
+              <p className="text-xs text-gray-400 mb-2">Найдено: {searchResults.length}</p>
+              {searchResults.length === 0 ? (
+                <p className="text-sm text-gray-400">Ничего не найдено</p>
+              ) : (
+                <div className="space-y-2">
+                  {searchResults.map(n => <NoteCard key={n.id} note={n} onClick={() => setActiveNoteId(n.id)} />)}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!searchResults && (
+            <>
+              {/* HOME */}
+              {screen === 'home' && (
+                <>
+                  <button
+                    onClick={() => handleNewNote(null)}
+                    className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors bg-white"
+                  >
+                    + Создать заметку
+                  </button>
+
+                  {/* Folders grid */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Папки</p>
+                      <button
+                        onClick={() => setShowNewFolder(true)}
+                        className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        + Папка
+                      </button>
+                    </div>
+                    {folders.length === 0 ? (
+                      <p className="text-sm text-gray-400">Нет папок. Создайте через кнопку выше или меню ☰</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3">
+                        {folders.map(f => {
+                          const cnt = folderNotes(f.id).length;
+                          return (
+                            <div
+                              key={f.id}
+                              onClick={() => handleOpenFolder(f)}
+                              className="bg-white border rounded-xl p-4 cursor-pointer hover:shadow-sm hover:border-blue-200 transition-all text-center"
+                            >
+                              <div className="text-3xl mb-2">📁</div>
+                              <p className="font-medium text-sm text-gray-800 truncate">{f.name}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">{cnt} заметок</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Notes without folder */}
+                  {(() => {
+                    const nf = liveNotes
+                      .filter(n => !n.folderId)
+                      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+                    if (!nf.length) return null;
+                    return (
+                      <div>
+                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">Без папки</p>
+                        <div className="space-y-2">
+                          {nf.map(n => <NoteCard key={n.id} note={n} onClick={() => setActiveNoteId(n.id)} />)}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              )}
+
+              {/* FOLDER */}
+              {screen === 'folder' && activeFolder && (
+                <>
+                  <button
+                    onClick={() => handleNewNote(activeFolder.id)}
+                    className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors bg-white"
+                  >
+                    + Создать заметку в «{activeFolder.name}»
+                  </button>
+                  {folderNotes(activeFolder.id).length === 0 ? (
+                    <p className="text-sm text-gray-400">В этой папке нет заметок</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {folderNotes(activeFolder.id).map(n =>
+                        <NoteCard key={n.id} note={n} onClick={() => setActiveNoteId(n.id)} />
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* ALL */}
+              {screen === 'all' && (
+                <>
+                  <button
+                    onClick={() => handleNewNote(null)}
+                    className="w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors bg-white"
+                  >
+                    + Создать заметку
+                  </button>
+                  {liveNotes.length === 0 ? (
+                    <p className="text-sm text-gray-400">Нет заметок</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {liveNotes
+                        .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
+                        .map(n => <NoteCard key={n.id} note={n} onClick={() => setActiveNoteId(n.id)} />)}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* TRASH */}
+              {screen === 'trash' && (
+                <>
+                  {trashNotes.length === 0 ? (
+                    <p className="text-sm text-gray-400">Корзина пуста</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {trashNotes.map(n => (
+                        <div key={n.id} className="bg-white border rounded-lg p-3">
+                          <p className="font-medium text-sm text-gray-700 mb-0.5">
+                            {n.title || <span className="italic text-gray-400">Без названия</span>}
+                          </p>
+                          {n.content && <p className="text-xs text-gray-400 truncate mb-1">{n.content}</p>}
+                          <p className="text-xs text-gray-400 mb-2">
+                            Удалено: {n.deletedAt ? fmt(n.deletedAt) : '—'}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => restoreNote(n.id)}
+                              className="text-xs text-blue-600 hover:underline"
+                            >
+                              ↩ Восстановить
+                            </button>
+                            <button
+                              onClick={() => permanentDelete(n.id)}
+                              className="text-xs text-red-500 hover:underline"
+                            >
+                              ✕ Удалить навсегда
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
           )}
         </div>
-      )}
+      </div>
 
-      {!search.trim() && (
-        <>
-          {/* Главный экран — папки */}
-          {screen === 'home' && (
-            <>
-              <button
-                onClick={() => handleCreateNote(null)}
-                style={{ display: 'block', width: '100%', padding: '10px', marginBottom: 16, fontSize: 14, cursor: 'pointer', border: '1px dashed #999', borderRadius: 6, background: 'none' }}
-              >
-                + Создать заметку
-              </button>
-
-              <div style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', marginBottom: 8 }}>Папки</div>
-              {folders.length === 0 && (
-                <div style={{ color: '#aaa', fontSize: 13, marginBottom: 12 }}>Нет папок. Создайте через меню ☰</div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, marginBottom: 20 }}>
-                {folders.map(f => {
-                  const cnt = folderNotes(f.id).length;
-                  return (
-                    <div
-                      key={f.id}
-                      onClick={() => { setActiveFolder(f); setScreen('folder'); }}
-                      style={{ border: '1px solid #ddd', borderRadius: 8, padding: '14px 12px', cursor: 'pointer', background: '#fafafa', textAlign: 'center' }}
-                    >
-                      <div style={{ fontSize: 28, marginBottom: 6 }}>📁</div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{f.name}</div>
-                      <div style={{ color: '#aaa', fontSize: 12, marginTop: 2 }}>{cnt} заметок</div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Незаписанные заметки (без папки) */}
-              {(() => {
-                const nf = liveNotes.filter(n => !n.folderId);
-                if (nf.length === 0) return null;
-                return (
-                  <>
-                    <div style={{ fontSize: 12, color: '#999', textTransform: 'uppercase', marginBottom: 8 }}>Без папки</div>
-                    {nf.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0)).map(n =>
-                      <NoteCard key={n.id} note={n} onClick={() => openNote(n)} />
-                    )}
-                  </>
-                );
-              })()}
-            </>
-          )}
-
-          {/* Экран папки */}
-          {screen === 'folder' && activeFolder && (
-            <>
-              <button
-                onClick={() => handleCreateNote(activeFolder.id)}
-                style={{ display: 'block', width: '100%', padding: '10px', marginBottom: 16, fontSize: 14, cursor: 'pointer', border: '1px dashed #999', borderRadius: 6, background: 'none' }}
-              >
-                + Создать заметку в «{activeFolder.name}»
-              </button>
-              {folderNotes(activeFolder.id).length === 0 ? (
-                <div style={{ color: '#aaa', fontSize: 13 }}>Нет заметок в этой папке</div>
-              ) : (
-                folderNotes(activeFolder.id)
-                  .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-                  .map(n => <NoteCard key={n.id} note={n} onClick={() => openNote(n)} />)
-              )}
-            </>
-          )}
-
-          {/* Экран все заметки */}
-          {screen === 'all' && (
-            <>
-              <button
-                onClick={() => handleCreateNote(null)}
-                style={{ display: 'block', width: '100%', padding: '10px', marginBottom: 16, fontSize: 14, cursor: 'pointer', border: '1px dashed #999', borderRadius: 6, background: 'none' }}
-              >
-                + Создать заметку
-              </button>
-              {liveNotes.length === 0 ? (
-                <div style={{ color: '#aaa', fontSize: 13 }}>Заметок нет</div>
-              ) : (
-                liveNotes
-                  .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0))
-                  .map(n => <NoteCard key={n.id} note={n} onClick={() => openNote(n)} />)
-              )}
-            </>
-          )}
-
-          {/* Корзина */}
-          {screen === 'trash' && (
-            <>
-              {trashNotes.length === 0 ? (
-                <div style={{ color: '#aaa', fontSize: 13 }}>Корзина пуста</div>
-              ) : (
-                trashNotes.map(n => (
-                  <div key={n.id} style={{ border: '1px solid #ddd', borderRadius: 6, padding: '10px 12px', marginBottom: 8, background: '#fafafa' }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                      {n.title || <span style={{ color: '#aaa', fontStyle: 'italic' }}>Без названия</span>}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>Удалено: {n.deletedAt ? fmtDate(n.deletedAt) : '—'}</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button onClick={() => restoreNote(n.id)} style={{ fontSize: 12 }}>↩ Восстановить</button>
-                      <button onClick={() => permanentDelete(n.id)} style={{ fontSize: 12, color: 'red' }}>✕ Удалить навсегда</button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </>
-          )}
-        </>
-      )}
-
-      {/* Боковое меню */}
+      {/* SideDrawer */}
       <SideDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         folders={folders}
         allCount={liveNotes.length}
         trashCount={trashNotes.length}
-        onShowAll={() => { setScreen('all'); setActiveFolder(null); }}
-        onShowTrash={() => { setScreen('trash'); setActiveFolder(null); }}
-        onOpenFolder={f => { setActiveFolder(f); setScreen('folder'); }}
-        onCreateFolder={() => { setDrawerOpen(false); setNewFolderModal(true); }}
-        onDeleteFolder={id => { deleteFolder(id); if (activeFolder?.id === id) { setScreen('home'); setActiveFolder(null); } }}
+        onShowAll={() => { setScreen('all'); setActiveFolderId(null); }}
+        onShowTrash={() => { setScreen('trash'); setActiveFolderId(null); }}
+        onOpenFolder={handleOpenFolder}
+        onCreateFolder={() => { setDrawerOpen(false); setShowNewFolder(true); }}
+        onDeleteFolder={handleDeleteFolder}
         onRenameFolder={renameFolder}
       />
 
-      {/* Модалка создания папки */}
-      {newFolderModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: '#fff', borderRadius: 10, padding: 24, width: 300 }}>
-            <h3 style={{ margin: '0 0 12px' }}>Новая папка</h3>
-            <input
-              autoFocus
-              value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') setNewFolderModal(false); }}
-              placeholder="Название папки"
-              style={{ width: '100%', padding: '8px 10px', border: '1px solid #ccc', borderRadius: 6, fontSize: 14, marginBottom: 12, boxSizing: 'border-box' }}
-            />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setNewFolderModal(false)} style={{ flex: 1, padding: '8px', cursor: 'pointer' }}>Отмена</button>
-              <button
-                onClick={handleCreateFolder}
-                disabled={!newFolderName.trim()}
-                style={{ flex: 1, padding: '8px', cursor: 'pointer', background: '#333', color: '#fff', border: 'none', borderRadius: 6 }}
-              >
-                Создать
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Create folder modal */}
+      {showNewFolder && (
+        <CreateFolderModal
+          onConfirm={handleCreateFolder}
+          onCancel={() => setShowNewFolder(false)}
+        />
       )}
     </div>
   );
