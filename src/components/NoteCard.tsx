@@ -5,8 +5,6 @@ interface Props {
   note: Note;
   tags: Tag[];
   onClick: () => void;
-  onPin?: () => void;
-  onFavorite?: () => void;
 }
 
 function formatDate(iso: string) {
@@ -22,7 +20,7 @@ function formatDate(iso: string) {
   return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-export default function NoteCard({ note, tags, onClick, onPin, onFavorite }: Props) {
+export default function NoteCard({ note, tags, onClick }: Props) {
   const noteTags = tags.filter(t => note.tags.includes(t.id));
   const preview = note.content.replace(/\n+/g, ' ').slice(0, 90);
 

@@ -76,7 +76,7 @@ export default function SideDrawer({
                 <span className={`text-xs rounded-full px-1.5 py-0.5 min-w-[20px] text-center ${
                   activeSection === item.id && !activeFolderId ? 'bg-amber/20 text-amber' : 'bg-surface-3 text-muted-foreground'
                 }`}>
-                  {counts[item.countKey as keyof typeof counts]}
+                  {counts[item.countKey]}
                 </span>
               </button>
             ))}
